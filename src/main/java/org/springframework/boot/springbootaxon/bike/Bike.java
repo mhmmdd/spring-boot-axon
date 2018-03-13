@@ -18,7 +18,6 @@ import javax.validation.constraints.NotNull;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 
-@Entity
 @Aggregate
 public class Bike {
     private static final long serialVersionUID = -5977984483620451665L;
@@ -29,7 +28,6 @@ public class Bike {
     private String id;
     private String title;
 
-    @Id
     public String getId() {
         return id;
     }

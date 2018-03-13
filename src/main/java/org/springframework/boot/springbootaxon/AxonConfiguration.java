@@ -2,25 +2,16 @@ package org.springframework.boot.springbootaxon;
 
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.eventstore.EventData;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.jdbc.HsqlEventTableFactory;
-import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.jdbc.PostgresEventTableFactory;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
-import org.axonframework.spring.eventhandling.scheduling.java.SimpleEventSchedulerFactoryBean;
-import org.axonframework.spring.jdbc.SpringDataSourceConnectionProvider;
-import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.springbootaxon.bike.Bike;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
@@ -47,7 +38,7 @@ public class AxonConfiguration {
 //        return new JpaEventStore(entityManagerProvider());
 //    }
     @Bean
-    Serializer axonJsonSerializer() {
+    public Serializer axonJsonSerializer() {
         return new JacksonSerializer();
     }
 
@@ -58,7 +49,7 @@ public class AxonConfiguration {
 //    }
 
     @Bean
-    public JpaEventStorageEngine eventStorageEngine(Serializer serializer,
+    public EventStorageEngine eventStorageEngine(Serializer serializer,
                                                     DataSource dataSource,
                                                     EventUpcasterChain myUpcaster,
                                                     EntityManagerProvider entityManagerProvider,
@@ -67,7 +58,17 @@ public class AxonConfiguration {
                 myUpcaster,
                 dataSource,
                 entityManagerProvider,
-                transactionManager);
+                transactionManager) {
+            @Override
+            protected EventData<?> createEventEntity(EventMessage<?> eventMessage, Serializer serializer) {
+                return new CustomDomainEventEntry((DomainEventMessage<?>) eventMessage, serializer);
+            }
+
+            @Override
+            protected String domainEventEntryEntityName() {
+                return CustomDomainEventEntry.class.getSimpleName();
+            }
+        };
         return eventStorageEngine;
     }
 
